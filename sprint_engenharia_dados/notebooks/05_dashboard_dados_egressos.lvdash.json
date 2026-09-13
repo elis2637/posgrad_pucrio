@@ -1,0 +1,801 @@
+{
+  "datasets": [
+    {
+      "name": "top_cursos_conversao",
+      "displayName": "Top 10 Cursos - Taxa Conversão Pós",
+      "queryLines": [
+        "SELECT\n",
+        "  nome_curso,\n",
+        "  area_conhecimento,\n",
+        "  total_egressos,\n",
+        "  taxa_potencial_pos_pct,\n",
+        "  media_nps\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.kpi_potencial_pos_graduacao\n",
+        "WHERE\n",
+        "  taxa_potencial_pos_pct IS NOT NULL\n",
+        "ORDER BY\n",
+        "  taxa_potencial_pos_pct DESC\n",
+        "LIMIT 10"
+      ],
+      "catalog": "mvp_eng_dados",
+      "schema": "default"
+    },
+    {
+      "name": "kpi_cards",
+      "displayName": "KPI Cards - Métricas Gerais",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT id_egresso) as total_egressos,\n",
+        "  ROUND(\n",
+        "    AVG(\n",
+        "      CASE\n",
+        "        WHEN potencial_matricula_pos = 1 THEN 100.0\n",
+        "        ELSE 0.0\n",
+        "      END\n",
+        "    ),\n",
+        "    2\n",
+        "  ) as taxa_conversao_pos_pct,\n",
+        "  ROUND(AVG(satisfacao_graduacao_nps), 2) as nps_medio,\n",
+        "  ROUND(AVG(renda_mensal_estimada), 2) as renda_media\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.fato_egressos"
+      ]
+    },
+    {
+      "name": "egressos_por_uf",
+      "displayName": "Egressos por UF",
+      "queryLines": [
+        "SELECT\n",
+        "  uf_residencia,\n",
+        "  SUM(qtd_egressos) as total_egressos,\n",
+        "  ROUND(AVG(renda_media), 2) as renda_media\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.kpi_perfil_profissional_uf\n",
+        "GROUP BY\n",
+        "  uf_residencia\n",
+        "ORDER BY\n",
+        "  total_egressos DESC"
+      ]
+    },
+    {
+      "name": "distribuicao_nps",
+      "displayName": "Distribuição NPS",
+      "queryLines": [
+        "SELECT\n",
+        "  categoria_nps,\n",
+        "  COUNT(DISTINCT id_egresso) as total_egressos\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.fato_egressos\n",
+        "GROUP BY\n",
+        "  categoria_nps\n",
+        "ORDER BY\n",
+        "  CASE categoria_nps\n",
+        "    WHEN 'Promotor' THEN 1\n",
+        "    WHEN 'Neutro' THEN 2\n",
+        "    WHEN 'Detrator' THEN 3\n",
+        "  END"
+      ]
+    },
+    {
+      "name": "conversao_tempo_bolsa",
+      "displayName": "Conversão por Tempo e Bolsista",
+      "queryLines": [
+        "SELECT\n",
+        "  faixa_meses_formacao,\n",
+        "  CASE\n",
+        "    WHEN bolsista_graduacao = 1 THEN 'Bolsista'\n",
+        "    WHEN bolsista_graduacao = 0 THEN 'Não-Bolsista'\n",
+        "    ELSE 'Não Informado'\n",
+        "  END as status_bolsista,\n",
+        "  total_egressos,\n",
+        "  taxa_potencial_pos_pct\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.kpi_conversao_tempo_bolsa\n",
+        "ORDER BY\n",
+        "  CASE faixa_meses_formacao\n",
+        "    WHEN '0-12m' THEN 1\n",
+        "    WHEN '13-24m' THEN 2\n",
+        "    WHEN '25-36m' THEN 3\n",
+        "    WHEN '37-60m' THEN 4\n",
+        "    WHEN '>60m' THEN 5\n",
+        "  END,\n",
+        "  bolsista_graduacao DESC"
+      ]
+    },
+    {
+      "name": "perfil_profissional_uf",
+      "displayName": "Perfil Profissional por UF",
+      "queryLines": [
+        "SELECT\n",
+        "  uf_residencia,\n",
+        "  area_atuacao,\n",
+        "  nivel_cargo,\n",
+        "  tipo_empresa,\n",
+        "  qtd_egressos,\n",
+        "  renda_media,\n",
+        "  taxa_potencial_pos_pct,\n",
+        "  media_meses_formado\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.kpi_perfil_profissional_uf\n",
+        "ORDER BY\n",
+        "  qtd_egressos DESC"
+      ]
+    },
+    {
+      "name": "top_roi_cursos",
+      "displayName": "Top 10 Cursos - ROI",
+      "queryLines": [
+        "SELECT\n",
+        "  nome_curso,\n",
+        "  nivel_cargo,\n",
+        "  tipo_empresa,\n",
+        "  renda_media,\n",
+        "  mensalidade_base,\n",
+        "  razao_roi_renda_mensalidade as roi\n",
+        "FROM\n",
+        "  mvp_eng_dados.gold.kpi_empregabilidade_roi_curso\n",
+        "WHERE\n",
+        "  tipo_empresa != 'DESEMPREGADO'\n",
+        "  AND razao_roi_renda_mensalidade IS NOT NULL\n",
+        "ORDER BY\n",
+        "  razao_roi_renda_mensalidade DESC\n",
+        "LIMIT 10"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "21204e35",
+      "displayName": "Page 1",
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total_egressos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_cards",
+                  "fields": [
+                    {
+                      "name": "total_egressos",
+                      "expression": "`total_egressos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Total de Egressos",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_egressos",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_taxa_conversao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_cards",
+                  "fields": [
+                    {
+                      "name": "taxa_conversao_pos_pct",
+                      "expression": "`taxa_conversao_pos_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Taxa Média Conversão Pós (%)",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "taxa_conversao_pos_pct",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_nps_medio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_cards",
+                  "fields": [
+                    {
+                      "name": "nps_medio",
+                      "expression": "`nps_medio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "NPS Médio",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "nps_medio",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_renda_media",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_cards",
+                  "fields": [
+                    {
+                      "name": "renda_media",
+                      "expression": "`renda_media`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Renda Média (R$)",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "renda_media",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "top_cursos_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_cursos_conversao",
+                  "fields": [
+                    {
+                      "name": "nome_curso",
+                      "expression": "`nome_curso`"
+                    },
+                    {
+                      "name": "sum(taxa_potencial_pos_pct)",
+                      "expression": "SUM(`taxa_potencial_pos_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Cursos por Taxa de Conversão Pós"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "nome_curso",
+                  "displayName": "nome_curso",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(taxa_potencial_pos_pct)",
+                  "displayName": "taxa_potencial_pos_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "nome_curso",
+                  "displayName": "nome_curso",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "egressos_uf_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "egressos_por_uf",
+                  "fields": [
+                    {
+                      "name": "uf_residencia",
+                      "expression": "`uf_residencia`"
+                    },
+                    {
+                      "name": "sum(total_egressos)",
+                      "expression": "SUM(`total_egressos`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Egressos por UF"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "uf_residencia",
+                  "displayName": "uf_residencia",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(total_egressos)",
+                  "displayName": "total_egressos",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "uf_residencia",
+                  "displayName": "uf_residencia",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "distribuicao_nps_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "distribuicao_nps",
+                  "fields": [
+                    {
+                      "name": "sum(total_egressos)",
+                      "expression": "SUM(`total_egressos`)"
+                    },
+                    {
+                      "name": "categoria_nps",
+                      "expression": "`categoria_nps`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Distribuição por Categoria NPS"
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(total_egressos)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "categoria_nps",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "roi_cursos_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_roi_cursos",
+                  "fields": [
+                    {
+                      "name": "nome_curso",
+                      "expression": "`nome_curso`"
+                    },
+                    {
+                      "name": "sum(roi)",
+                      "expression": "SUM(`roi`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Cursos por ROI (Renda/Mensalidade)"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "nome_curso",
+                  "displayName": "nome_curso",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(roi)",
+                  "displayName": "roi",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "nome_curso",
+                  "displayName": "nome_curso",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 13,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "conversao_tempo_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "conversao_tempo_bolsa",
+                  "fields": [
+                    {
+                      "name": "status_bolsista",
+                      "expression": "`status_bolsista`"
+                    },
+                    {
+                      "name": "faixa_meses_formacao",
+                      "expression": "`faixa_meses_formacao`"
+                    },
+                    {
+                      "name": "sum(taxa_potencial_pos_pct)",
+                      "expression": "SUM(`taxa_potencial_pos_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Taxa de Conversão Pós por Tempo e Bolsista",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "faixa_meses_formacao",
+                  "displayName": "faixa_meses_formacao",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(taxa_potencial_pos_pct)",
+                  "displayName": "taxa_potencial_pos_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "status_bolsista",
+                  "displayName": "faixa_meses_formacao",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "perfil_profissional_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "perfil_profissional_uf",
+                  "fields": [
+                    {
+                      "name": "uf_residencia",
+                      "expression": "`uf_residencia`"
+                    },
+                    {
+                      "name": "area_atuacao",
+                      "expression": "`area_atuacao`"
+                    },
+                    {
+                      "name": "nivel_cargo",
+                      "expression": "`nivel_cargo`"
+                    },
+                    {
+                      "name": "tipo_empresa",
+                      "expression": "`tipo_empresa`"
+                    },
+                    {
+                      "name": "qtd_egressos",
+                      "expression": "`qtd_egressos`"
+                    },
+                    {
+                      "name": "renda_media",
+                      "expression": "`renda_media`"
+                    },
+                    {
+                      "name": "taxa_potencial_pos_pct",
+                      "expression": "`taxa_potencial_pos_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Perfil Profissional Detalhado por UF"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "uf_residencia"
+                  },
+                  {
+                    "fieldName": "area_atuacao"
+                  },
+                  {
+                    "fieldName": "nivel_cargo"
+                  },
+                  {
+                    "fieldName": "tipo_empresa"
+                  },
+                  {
+                    "fieldName": "qtd_egressos"
+                  },
+                  {
+                    "fieldName": "renda_media"
+                  },
+                  {
+                    "fieldName": "taxa_potencial_pos_pct"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "header_kpis",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## 📊 Métricas Principais\n",
+                "\n",
+                "Indicadores consolidados de **10.727 egressos únicos** (933 duplicatas removidas da camada Bronze)."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "header_cursos",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## 🎓 Análise de Cursos e Desempenho"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "header_perfil",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## 💼 Perfil Profissional Detalhado"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 25,
+            "width": 12,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
