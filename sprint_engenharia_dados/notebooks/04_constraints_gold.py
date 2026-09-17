@@ -99,6 +99,3 @@
 # MAGIC DESCRIBE TABLE EXTENDED mvp_eng_dados.gold.dim_curso;
 # MAGIC DESCRIBE TABLE EXTENDED mvp_eng_dados.gold.dim_egresso;
 # MAGIC DESCRIBE TABLE EXTENDED mvp_eng_dados.gold.dim_emprego;
-
-# COMMAND ----------
-
